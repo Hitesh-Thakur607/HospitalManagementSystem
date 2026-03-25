@@ -14,10 +14,13 @@
     const PORT = process.env.PORT || 5000;
 
     app.use(
+        // console.log("CORS configured for frontend").
         cors({
-            origin: process.env.FRONTEND_URL || "https://hospital-management-system-enwd.onrender.com",
+            origin: "https://hospitalmanagementsystem-a94f.onrender.com",
+            
             credentials: true,
         })
+        // console.log("CORS configured for frontend"),
     );
     app.use(express.json());
     app.use(cookieParser());
