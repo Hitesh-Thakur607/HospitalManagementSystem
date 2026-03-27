@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "build":"npm install && npm run build --prefix client"
+    "build": "npm --prefix frontend run build",
+    "render-build": "npm install && npm --prefix frontend install && npm --prefix frontend run build",
+    "render-start": "node app.js"
   },
   "license": "MIT",
   "dependencies": {

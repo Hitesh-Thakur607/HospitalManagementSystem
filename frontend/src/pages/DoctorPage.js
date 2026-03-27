@@ -11,6 +11,11 @@ const DoctorPage = ({ showToast }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const formatDate = (value) => {
+    if (!value) return "N/A";
+    return new Date(value).toLocaleDateString();
+  };
+
   useEffect(() => {
     doctorAPI.getMe().then(setProfile).catch((e) => showToast(getErrorMessage(e), "error"));
     appointmentAPI.getAll().then(setAppointments).catch(() => {});
@@ -34,10 +39,39 @@ const DoctorPage = ({ showToast }) => {
         </div>
       </header>
       <div className="container">
-        <h3>Profile</h3>
-        <pre>{JSON.stringify(profile, null, 2)}</pre>
-        <h3>Appointments</h3>
-        <pre>{JSON.stringify(appointments, null, 2)}</pre>
+        <h3 className="section-title">Profile</h3>
+        {profile ? (
+          <div className="profile-card">
+            <p><strong>Name:</strong> {profile.name || "N/A"}</p>
+            <p><strong>Email:</strong> {profile.email || "N/A"}</p>
+            <p><strong>Specialization:</strong> {profile.specialization || "N/A"}</p>
+            <p><strong>Department:</strong> {profile.department || "N/A"}</p>
+            <p><strong>Qualifications:</strong> {profile.qualifications || "N/A"}</p>
+            <p><strong>Experience:</strong> {profile.experience_years ? `${profile.experience_years} years` : "N/A"}</p>
+          </div>
+        ) : (
+          <div className="no-data">Profile not found</div>
+        )}
+
+        <h3 className="section-title">Appointments</h3>
+        {appointments.length ? (
+          <div className="appointment-list">
+            {appointments.map((appointment) => (
+              <div key={appointment.id} className="appointment-card">
+                <div className="appointment-top">
+                  <strong>{appointment.patient_name || "Patient"}</strong>
+                  <span className={`status-badge status-${appointment.status || "booked"}`}>
+                    {(appointment.status || "booked").toUpperCase()}
+                  </span>
+                </div>
+                <p><strong>Date:</strong> {formatDate(appointment.appointment_date)}</p>
+                <p><strong>Time:</strong> {appointment.appointment_time || "N/A"}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-data">No appointments yet</div>
+        )}
       </div>
     </div>
   );

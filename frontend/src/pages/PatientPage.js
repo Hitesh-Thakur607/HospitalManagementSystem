@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import DoctorCard from "../components/DoctorCard";
 import { AuthContext } from "../context/AuthContext";
 import { appointmentAPI, authAPI, doctorAPI } from "../services/api";
 import { getErrorMessage } from "../utils/helpers";
@@ -10,6 +11,11 @@ const PatientPage = ({ showToast }) => {
   const [appointments, setAppointments] = useState([]);
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const formatDate = (value) => {
+    if (!value) return "N/A";
+    return new Date(value).toLocaleDateString();
+  };
 
   useEffect(() => {
     doctorAPI.getAll().then(setDoctors).catch((e) => showToast(getErrorMessage(e), "error"));
@@ -34,10 +40,37 @@ const PatientPage = ({ showToast }) => {
         </div>
       </header>
       <div className="container">
-        <h3>Available Doctors</h3>
-        <pre>{JSON.stringify(doctors, null, 2)}</pre>
-        <h3>Your Appointments</h3>
-        <pre>{JSON.stringify(appointments, null, 2)}</pre>
+        <h3 className="section-title">Available Doctors</h3>
+        {doctors.length ? (
+          <div className="doctor-grid">
+            {doctors.map((doctor) => (
+              <DoctorCard key={doctor.id} doctor={doctor} />
+            ))}
+          </div>
+        ) : (
+          <div className="no-data">No approved doctors available</div>
+        )}
+
+        <h3 className="section-title">Your Appointments</h3>
+        {appointments.length ? (
+          <div className="appointment-list">
+            {appointments.map((appointment) => (
+              <div key={appointment.id} className="appointment-card">
+                <div className="appointment-top">
+                  <strong>{appointment.doctor_name || "Doctor"}</strong>
+                  <span className={`status-badge status-${appointment.status || "booked"}`}>
+                    {(appointment.status || "booked").toUpperCase()}
+                  </span>
+                </div>
+                <p><strong>Department:</strong> {appointment.department || "N/A"}</p>
+                <p><strong>Date:</strong> {formatDate(appointment.appointment_date)}</p>
+                <p><strong>Time:</strong> {appointment.appointment_time || "N/A"}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-data">No appointments booked yet</div>
+        )}
       </div>
     </div>
   );
