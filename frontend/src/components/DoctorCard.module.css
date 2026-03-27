@@ -1,0 +1,105 @@
+.doctor-card {
+  border: 1px solid #dce5f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(22, 38, 66, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.doctor-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(22, 38, 66, 0.14);
+}
+
+.doctor-header {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.doctor-avatar,
+.doctor-avatar-fallback {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+}
+
+.doctor-avatar {
+  object-fit: cover;
+}
+
+.doctor-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #2196f3;
+  color: #fff;
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.doctor-info {
+  flex: 1;
+}
+
+.doctor-name {
+  margin: 0;
+  color: #1d3551;
+}
+
+.doctor-email {
+  margin: 4px 0 0;
+  color: #4a6480;
+}
+
+.doctor-body p {
+  margin: 8px 0;
+}
+
+.doctor-bio {
+  color: #5f6f84;
+}
+
+.doctor-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  color: #fff;
+}
+
+.badge-approved {
+  background: #2e7d32;
+}
+
+.badge-pending {
+  background: #ef6c00;
+}
+
+.badge-rejected {
+  background: #c62828;
+}
+
+.btn {
+  border: 0;
+  border-radius: 4px;
+  padding: 8px 14px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-success {
+  background: #2e7d32;
+}
+
+.btn-danger {
+  background: #c62828;
+}

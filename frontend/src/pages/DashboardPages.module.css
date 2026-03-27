@@ -1,12 +1,15 @@
 .dashboard-page {
-  background-color: #f5f5f5;
+  background:
+    radial-gradient(circle at 10% 0%, #e8f3ff 0%, transparent 40%),
+    radial-gradient(circle at 100% 20%, #f3ecff 0%, transparent 35%),
+    #f5f7fb;
   min-height: 100vh;
 }
 
 .header {
-  background-color: #2c3e50;
+  background: linear-gradient(135deg, #1f4e79, #1f365d);
   color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(21, 42, 74, 0.2);
   padding: 20px 0;
 }
 
@@ -45,8 +48,9 @@
 
 .page-content {
   background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  border: 1px solid #e5ecf5;
+  box-shadow: 0 12px 28px rgba(24, 39, 62, 0.08);
   margin-top: 20px;
   padding: 30px;
 }
@@ -68,16 +72,16 @@
   font-size: 16px;
   font-weight: 500;
   padding: 12px 24px;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
 .tab-btn.active {
-  color: #2c3e50;
+  color: #143b63;
   border-bottom-color: #3498db;
 }
 
 .tab-btn:hover {
-  color: #2c3e50;
+  color: #143b63;
 }
 
 .logout-btn {
@@ -122,6 +126,10 @@
 
 .doctor-item {
   position: relative;
+  background: #f8fbff;
+  border: 1px solid #e6edf7;
+  border-radius: 12px;
+  padding: 12px;
 }
 
 .doctor-item .btn-primary {
@@ -131,7 +139,7 @@
 
 .booking-form-section {
   margin-top: 12px;
-  background-color: #f0f7ff;
+  background: linear-gradient(180deg, #f0f7ff, #f8fbff);
   border-left: 4px solid #3498db;
   border-radius: 8px;
   padding: 16px;
@@ -157,7 +165,7 @@
 }
 
 .btn-primary {
-  background-color: #3498db;
+  background: linear-gradient(135deg, #2f86d2, #2c6fb2);
   border: none;
   border-radius: 4px;
   color: #fff;
@@ -165,11 +173,12 @@
   font-size: 14px;
   font-weight: 500;
   padding: 10px 20px;
-  transition: background-color 0.3s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .btn-primary:hover {
-  background-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(47, 134, 210, 0.3);
 }
 
 .btn-primary:disabled {
@@ -247,7 +256,7 @@
 
 .profile-view {
   background-color: #f9f9f9;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #dde5ef;
   border-radius: 8px;
   padding: 30px;
 }

@@ -72,7 +72,7 @@ exports.getDoctors = (req, res) => {
     }
 
     db.query(
-      `SELECT u.id, u.name, u.email, u.phone, u.address, u.specialization,
+      `SELECT u.id, d.id AS doctor_id, u.name, u.email, u.phone, u.address, u.specialization,
               u.is_approved,
               d.department, d.biography, d.qualifications, d.experience_years, d.image
        FROM users u
@@ -89,7 +89,7 @@ exports.getDoctors = (req, res) => {
 
 exports.getAllDoctorsWithStatus = (req, res) => {
   db.query(
-    `SELECT u.id, u.name, u.email, u.phone, u.address, u.specialization, u.is_approved,
+    `SELECT u.id, d.id AS doctor_id, u.name, u.email, u.phone, u.address, u.specialization, u.is_approved,
             d.department, d.biography, d.qualifications, d.experience_years, d.image,
             d.approved_by, d.approved_at
      FROM users u
@@ -103,7 +103,7 @@ exports.getAllDoctorsWithStatus = (req, res) => {
 
 exports.getPendingDoctors = (req, res) => {
   db.query(
-    `SELECT u.id, u.name, u.email, u.phone, u.address,
+    `SELECT u.id, d.id AS doctor_id, u.name, u.email, u.phone, u.address,
             d.department, d.biography, d.experience_years
      FROM users u
      INNER JOIN doctor d ON u.id = d.user_id
@@ -119,7 +119,7 @@ exports.getMyDoctorProfile = (req, res) => {
   const userId = req.user.id;
 
   db.query(
-    `SELECT u.id, u.name, u.email, u.phone, u.address, u.specialization, u.is_approved,
+    `SELECT u.id, d.id AS doctor_id, u.name, u.email, u.phone, u.address, u.specialization, u.is_approved,
             d.department, d.biography, d.qualifications, d.experience_years, d.image
      FROM users u
      INNER JOIN doctor d ON u.id = d.user_id

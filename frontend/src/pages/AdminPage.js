@@ -4,7 +4,9 @@ import DoctorCard from "../components/DoctorCard";
 import { AuthContext } from "../context/AuthContext";
 import { doctorAPI, authAPI } from "../services/api";
 import { getErrorMessage } from "../utils/helpers";
-import "./DashboardPages.css";
+import styles from "./DashboardPages.module.css";
+
+const cx = (...names) => names.map((name) => styles[name]).filter(Boolean).join(" ");
 
 const AdminPage = ({ showToast }) => {
   const [doctors, setDoctors] = useState([]);
@@ -72,40 +74,42 @@ const AdminPage = ({ showToast }) => {
   };
 
   return (
-    <div className="dashboard-page">
-      <header className="header">
-        <div className="header-content">
+    <div className={styles["dashboard-page"]}>
+      <header className={styles.header}>
+        <div className={styles["header-content"]}>
           <h1>Admin Dashboard</h1>
-          <div className="header-right">
-            <div>Logged in as <strong>{user?.name}</strong> ({user?.role})</div>
-            <button className="logout-btn" onClick={handleLogout}>Logout</button>
+          <div className={styles["header-right"]}>
+            <div className={styles["user-info"]}>Logged in as <strong>{user?.name}</strong> ({user?.role})</div>
+            <button className={styles["logout-btn"]} onClick={handleLogout}>Logout</button>
           </div>
         </div>
       </header>
 
-      <div className="container">
-        <div className="tabs">
-          <button className={`tab-btn ${activeTab === "all" ? "active" : ""}`} onClick={() => setActiveTab("all")}>All Doctors ({doctors.length})</button>
-          <button className={`tab-btn ${activeTab === "pending" ? "active" : ""}`} onClick={() => setActiveTab("pending")}>Pending Approval ({pendingDoctors.length})</button>
-        </div>
+      <div className={styles.container}>
+        <div className={styles["page-content"]}>
+          <div className={styles.tabs}>
+            <button className={cx("tab-btn", activeTab === "all" ? "active" : "")} onClick={() => setActiveTab("all")}>All Doctors ({doctors.length})</button>
+            <button className={cx("tab-btn", activeTab === "pending" ? "active" : "")} onClick={() => setActiveTab("pending")}>Pending Approval ({pendingDoctors.length})</button>
+          </div>
 
-        {loading ? (
-          <div className="loading">Loading...</div>
-        ) : activeTab === "all" ? (
-          doctors.length ? (
-            doctors.map((doctor) => (
-              <DoctorCard key={doctor.id} doctor={doctor} isAdmin={true} showApprovalStatus={true} onApprove={handleApprove} onReject={handleReject} />
+          {loading ? (
+            <div className={styles.loading}>Loading...</div>
+          ) : activeTab === "all" ? (
+            doctors.length ? (
+              doctors.map((doctor) => (
+                <DoctorCard key={doctor.id} doctor={doctor} isAdmin={true} showApprovalStatus={true} onApprove={handleApprove} onReject={handleReject} />
+              ))
+            ) : (
+              <div className={styles["no-data"]}>No doctors found</div>
+            )
+          ) : pendingDoctors.length ? (
+            pendingDoctors.map((doctor) => (
+              <DoctorCard key={doctor.id} doctor={doctor} isAdmin={true} onApprove={handleApprove} onReject={handleReject} />
             ))
           ) : (
-            <div className="no-data">No doctors found</div>
-          )
-        ) : pendingDoctors.length ? (
-          pendingDoctors.map((doctor) => (
-            <DoctorCard key={doctor.id} doctor={doctor} isAdmin={true} onApprove={handleApprove} onReject={handleReject} />
-          ))
-        ) : (
-          <div className="no-data">No pending approvals</div>
-        )}
+            <div className={styles["no-data"]}>No pending approvals</div>
+          )}
+        </div>
       </div>
     </div>
   );

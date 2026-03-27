@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { getErrorMessage } from "../utils/helpers";
-import "./AuthPages.css";
+import styles from "./AuthPages.module.css";
 
 const LoginPage = ({ showToast }) => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -25,15 +25,20 @@ const LoginPage = ({ showToast }) => {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1>Login</h1>
-        <form className="auth-form" onSubmit={onSubmit}>
-          <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <input type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-          <button type="submit">Login</button>
+    <div className={styles["auth-page"]}>
+      <div className={styles["auth-card"]}>
+        <h1 className={styles["auth-title"]}>Hospital Management System</h1>
+        <h2 className={styles["auth-subtitle"]}>Login</h2>
+        <form className={styles["auth-form"]} onSubmit={onSubmit}>
+          <div className={styles["form-group"]}>
+            <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div className={styles["form-group"]}>
+            <input type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+          </div>
+          <button type="submit" className={styles["btn-submit"]}>Login</button>
         </form>
-        <p>New user? <Link to="/register">Register here</Link></p>
+        <p className={styles["auth-link"]}>New user? <Link to="/register">Register here</Link></p>
       </div>
     </div>
   );

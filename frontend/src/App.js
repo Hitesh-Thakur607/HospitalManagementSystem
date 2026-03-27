@@ -7,8 +7,6 @@ import AdminPage from "./pages/AdminPage";
 import DoctorPage from "./pages/DoctorPage";
 import PatientPage from "./pages/PatientPage";
 import Toast from "./components/Toast";
-import "./pages/DashboardPages.css";
-import "./components/DoctorCard.css";
 
 function App() {
   const [toast, setToast] = useState({ message: "", type: "info" });

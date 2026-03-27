@@ -18,7 +18,7 @@
         cors({
             origin: "https://hospitalmanagementsystem-a94f.onrender.com",
             
-            credentials: true,
+            // credentials: true,
         })
         // console.log("CORS configured for frontend"),
     );
