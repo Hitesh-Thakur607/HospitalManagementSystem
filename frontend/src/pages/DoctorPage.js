@@ -6,12 +6,24 @@ import { getErrorMessage } from "../utils/helpers";
 import styles from "./DashboardPages.module.css";
 
 const cx = (...names) => names.map((name) => styles[name]).filter(Boolean).join(" ");
+const MAX_IMAGE_SIZE_MB = 5;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+
+const fileToDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Unable to read selected image"));
+    reader.readAsDataURL(file);
+  });
 
 const DoctorPage = ({ showToast }) => {
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [activeTab, setActiveTab] = useState("profile");
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [editForm, setEditForm] = useState({
     specialization: "",
     department: "",
@@ -33,6 +45,7 @@ const DoctorPage = ({ showToast }) => {
       .getMe()
       .then((data) => {
         setProfile(data);
+        setImagePreview(data.image || "");
         setEditForm({
           specialization: data.specialization || "",
           department: data.department || "",
@@ -67,23 +80,65 @@ const DoctorPage = ({ showToast }) => {
 
   const handleEditChange = (field, value) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
+
+    if (field === "image") {
+      setSelectedImageFile(null);
+      setImagePreview(value);
+    }
+  };
+
+  const handleImageFileChange = async (event) => {
+    const selectedFile = event.target.files && event.target.files[0];
+    if (!selectedFile) {
+      return;
+    }
+
+    if (!ALLOWED_IMAGE_TYPES.includes(selectedFile.type)) {
+      showToast("Please upload a valid image file (JPG, PNG, WEBP, GIF)", "error");
+      event.target.value = "";
+      return;
+    }
+
+    if (selectedFile.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+      showToast(`Image must be smaller than ${MAX_IMAGE_SIZE_MB} MB`, "error");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const previewDataUrl = await fileToDataUrl(selectedFile);
+      setSelectedImageFile(selectedFile);
+      setImagePreview(previewDataUrl);
+    } catch (error) {
+      showToast(getErrorMessage(error), "error");
+    } finally {
+      event.target.value = "";
+    }
   };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await doctorAPI.updateMe({
-        specialization: editForm.specialization,
-        department: editForm.department,
-        qualifications: editForm.qualifications,
-        experience_years: editForm.experience_years,
-        biography: editForm.biography,
-        image: editForm.image,
-      });
+      const payload = new FormData();
+      payload.append("specialization", editForm.specialization);
+      payload.append("department", editForm.department);
+      payload.append("qualifications", editForm.qualifications);
+      payload.append("experience_years", editForm.experience_years);
+      payload.append("biography", editForm.biography);
+
+      if (selectedImageFile) {
+        payload.append("image", selectedImageFile);
+      } else if (editForm.image.trim()) {
+        payload.append("imageUrl", editForm.image.trim());
+      }
+
+      await doctorAPI.updateMe(payload);
 
       const latestProfile = await doctorAPI.getMe();
       setProfile(latestProfile);
+      setSelectedImageFile(null);
+      setImagePreview(latestProfile.image || "");
       setEditForm({
         specialization: latestProfile.specialization || "",
         department: latestProfile.department || "",
@@ -223,12 +278,33 @@ const DoctorPage = ({ showToast }) => {
                   </div>
 
                   <div className={cx("form-group", "form-group-full")}>
-                    <label>Profile Image URL</label>
+                    <label>Profile Image</label>
+                    <input type="file" accept="image/*" onChange={handleImageFileChange} />
+                    <small className={styles["input-help"]}>Upload JPG, PNG, WEBP, or GIF up to 5 MB</small>
+                  </div>
+
+                  <div className={cx("form-group", "form-group-full")}>
+                    <label>Or Paste Image URL</label>
                     <input
                       value={editForm.image}
                       onChange={(e) => handleEditChange("image", e.target.value)}
-                      placeholder="Paste image URL"
+                      placeholder="https://example.com/doctor-photo.jpg"
                     />
+                    {imagePreview ? (
+                      <div className={styles["image-preview-wrap"]}>
+                        <img src={imagePreview} alt="Preview" className={styles["image-preview"]} />
+                        <button
+                          className={styles["btn-secondary"]}
+                          type="button"
+                          onClick={() => {
+                            setSelectedImageFile(null);
+                            handleEditChange("image", "");
+                          }}
+                        >
+                          Remove Image
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className={cx("form-group", "form-group-full")}>

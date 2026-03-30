@@ -1,8 +1,50 @@
 const db = require("../config/db");
 const cloudinary = require("../config/cloudinary");
 
-const applyDoctorProfileUpdate = async (doctorId, payload, res) => {
-  const { department, biography, qualifications, experience_years, specialization, image } = payload;
+const isHttpUrl = (value = "") => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch (error) {
+    return false;
+  }
+};
+
+const cloudinaryUploadOptions = (doctorId) => ({
+  folder: "hospital-management/doctors",
+  public_id: `doctor-${doctorId}`,
+  overwrite: true,
+  invalidate: true,
+  resource_type: "image",
+  allowed_formats: ["jpg", "jpeg", "png", "webp", "gif"],
+  transformation: [{ width: 800, height: 800, crop: "limit" }, { quality: "auto", fetch_format: "auto" }],
+});
+
+const uploadDoctorImageByUrl = async (imageUrl, doctorId) => {
+  const uploadResult = await cloudinary.uploader.upload(imageUrl, cloudinaryUploadOptions(doctorId));
+  return uploadResult.secure_url;
+};
+
+const uploadDoctorImageByBuffer = async (fileBuffer, doctorId) =>
+  new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(cloudinaryUploadOptions(doctorId), (error, result) => {
+      if (error) {
+        return reject(error);
+      }
+
+      if (!result || !result.secure_url) {
+        return reject(new Error("Image upload failed"));
+      }
+
+      return resolve(result.secure_url);
+    });
+
+    uploadStream.end(fileBuffer);
+  });
+
+const applyDoctorProfileUpdate = async (doctorId, payload, uploadedFile, res) => {
+  const { department, biography, qualifications, experience_years, specialization } = payload;
+  const imageUrl = typeof payload.imageUrl === "string" ? payload.imageUrl.trim() : "";
 
   db.query("SELECT * FROM doctor WHERE user_id = ?", [doctorId], async (err, result) => {
     if (err) return res.status(500).json(err);
@@ -10,16 +52,33 @@ const applyDoctorProfileUpdate = async (doctorId, payload, res) => {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
-    let uploadedImage = image || result[0].image;
+    let uploadedImage = result[0].image;
 
-    if (image && image !== result[0].image) {
+    if (experience_years !== undefined && experience_years !== null && experience_years !== "") {
+      const parsedExperienceYears = Number(experience_years);
+      if (!Number.isInteger(parsedExperienceYears) || parsedExperienceYears < 0 || parsedExperienceYears > 80) {
+        return res.status(400).json({ message: "experience_years must be an integer between 0 and 80" });
+      }
+    }
+
+    if (uploadedFile) {
       try {
-        const uploadResult = await cloudinary.uploader.upload(image, {
-          folder: "hospital-management/doctors",
-        });
-        uploadedImage = uploadResult.secure_url;
+        uploadedImage = await uploadDoctorImageByBuffer(uploadedFile.buffer, doctorId);
       } catch (uploadErr) {
-        return res.status(500).json({
+        return res.status(400).json({
+          message: "Failed to upload doctor image",
+          error: uploadErr.message,
+        });
+      }
+    } else if (imageUrl && imageUrl !== result[0].image) {
+      if (!isHttpUrl(imageUrl)) {
+        return res.status(400).json({ message: "Invalid image URL format" });
+      }
+
+      try {
+        uploadedImage = await uploadDoctorImageByUrl(imageUrl, doctorId);
+      } catch (uploadErr) {
+        return res.status(400).json({
           message: "Failed to upload doctor image",
           error: uploadErr.message,
         });
@@ -32,7 +91,9 @@ const applyDoctorProfileUpdate = async (doctorId, payload, res) => {
         department || result[0].department,
         biography || result[0].biography,
         qualifications || result[0].qualifications,
-        experience_years || result[0].experience_years,
+        experience_years !== undefined && experience_years !== null && experience_years !== ""
+          ? Number(experience_years)
+          : result[0].experience_years,
         uploadedImage,
         doctorId,
       ],
@@ -143,13 +204,13 @@ exports.updateMyDoctorProfile = (req, res) => {
     if (result[0].role !== "doctor") {
       return res.status(403).json({ message: "Only doctors can update doctor profile" });
     }
-    return applyDoctorProfileUpdate(userId, req.body, res);
+    return applyDoctorProfileUpdate(userId, req.body, req.file, res);
   });
 };
 
 exports.updateDoctorProfile = (req, res) => {
   const doctorId = req.params.id;
-  return applyDoctorProfileUpdate(doctorId, req.body, res);
+  return applyDoctorProfileUpdate(doctorId, req.body, req.file, res);
 };
 
 exports.approveDoctorAccount = (req, res) => {
