@@ -43,6 +43,7 @@ export const appointmentAPI = {
   getAll: () => apiCall("/appointments/mine"),
   book: (payload) => apiCall("/appointments", { method: "POST", data: payload }),
   complete: (appointmentId) => apiCall(`/appointments/${appointmentId}/complete`, { method: "PUT" }),
+  approve: (appointmentId) => apiCall(`/appointments/${appointmentId}/approve`, { method: "PUT" }),
 };
 
 export const chatAPI = {

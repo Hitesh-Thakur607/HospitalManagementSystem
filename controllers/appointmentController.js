@@ -118,3 +118,26 @@ exports.completeAppointment = (req, res) => {
     return res.json({ message: "Appointment marked completed" });
   });
 };
+
+exports.approveAppointment = (req, res) => {
+  const appointmentId = req.params.id;
+  const userId = req.user.id;
+
+  // Ensure the requester is the doctor who owns the appointment
+  db.query(
+    `SELECT a.id FROM appointments a
+     INNER JOIN doctor d ON a.doctor_id = d.id
+     WHERE a.id = ? AND d.user_id = ? LIMIT 1`,
+    [appointmentId, userId],
+    (err, rows) => {
+      if (err) return res.status(500).json(err);
+      if (!rows.length) return res.status(404).json({ message: "Appointment not found or not authorized" });
+
+      db.query("UPDATE appointments SET status = 'approved' WHERE id = ? AND status = 'booked'", [appointmentId], (uErr, result) => {
+        if (uErr) return res.status(500).json(uErr);
+        if (!result.affectedRows) return res.status(404).json({ message: "Appointment not found" });
+        return res.json({ message: "Appointment approved" });
+      });
+    }
+  );
+};

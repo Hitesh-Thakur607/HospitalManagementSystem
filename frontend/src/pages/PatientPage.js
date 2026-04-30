@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import ChatPanel from "../components/ChatPanel";
 import DoctorCard from "../components/DoctorCard";
@@ -8,6 +8,21 @@ import { getErrorMessage } from "../utils/helpers";
 import styles from "./DashboardPages.module.css";
 
 const cx = (...names) => names.map((name) => styles[name]).filter(Boolean).join(" ");
+
+const getAppointmentStatusLabel = (status) => {
+  switch (status) {
+    case "booked":
+      return "Pending approval";
+    case "approved":
+      return "Approved";
+    case "completed":
+      return "Completed";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status || "Pending approval";
+  }
+};
 
 const PatientPage = ({ showToast }) => {
   const [profile, setProfile] = useState(null);
@@ -82,18 +97,22 @@ const PatientPage = ({ showToast }) => {
     };
   }, [showToast]);
 
-  useEffect(() => {
-    if (!profile) {
-      return;
-    }
+  const initializedRef = useRef(false);
 
+  useEffect(() => {
+    if (!profile) return;
+
+    // If profile is incomplete, ensure profile tab is shown and mark initialized
     if (!profileComplete) {
       setActiveTab("profile");
+      initializedRef.current = true;
       return;
     }
 
-    if (activeTab === "profile") {
+    // Only auto-advance from profile -> doctors on initial load
+    if (!initializedRef.current && activeTab === "profile") {
       setActiveTab("doctors");
+      initializedRef.current = true;
     }
   }, [profile, profileComplete, activeTab]);
 
@@ -448,7 +467,7 @@ const PatientPage = ({ showToast }) => {
                           <div className={styles["appointment-time"]}>{appointment.appointment_time || "N/A"}</div>
                         </div>
                         <span className={cx("status-badge", `status-${appointment.status || "booked"}`)}>
-                          {appointment.status || "booked"}
+                          {getAppointmentStatusLabel(appointment.status)}
                         </span>
                       </div>
 

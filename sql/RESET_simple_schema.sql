@@ -53,7 +53,7 @@ CREATE TABLE appointments (
   doctor_id INT NOT NULL,
   appointment_date VARCHAR(30) NOT NULL,
   appointment_time VARCHAR(30) NOT NULL,
-  status ENUM('booked', 'completed', 'cancelled') NOT NULL DEFAULT 'booked',
+  status ENUM('booked', 'approved', 'completed', 'cancelled') NOT NULL DEFAULT 'booked',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_appointments_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
   CONSTRAINT fk_appointments_doctor FOREIGN KEY (doctor_id) REFERENCES doctor(id) ON DELETE CASCADE,

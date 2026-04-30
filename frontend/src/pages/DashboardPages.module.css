@@ -476,6 +476,11 @@
   color: #fff;
 }
 
+.status-approved {
+  background-color: #1f8f4e;
+  color: #fff;
+}
+
 .status-cancelled {
   background-color: #f44336;
   color: #fff;
@@ -507,6 +512,31 @@
   border-radius: 999px;
   padding: 4px 10px;
   color: #fff;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 18, 35, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 50;
+}
+
+.modal-content {
+  width: min(680px, 100%);
+  background: #fff;
+  border-radius: 24px;
+  border: 1px solid rgba(181, 198, 224, 0.5);
+  box-shadow: 0 30px 80px rgba(8, 18, 35, 0.24);
+  padding: 24px;
+}
+
+.modal-content h3 {
+  margin: 0 0 18px;
+  color: #133459;
 }
 
 .profile-banner {

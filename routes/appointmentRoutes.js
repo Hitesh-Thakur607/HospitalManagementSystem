@@ -6,5 +6,6 @@ const verifyProfileCompletion = require("../middleware/verifyProfileCompletion")
 router.get("/mine", verifyToken, ctrl.getMyAppointments);
 router.post("/", verifyToken, verifyProfileCompletion({ role: "patient" }), ctrl.bookAppointment);
 router.put("/:id/complete", verifyToken, ctrl.completeAppointment);
+router.put("/:id/approve", verifyToken, ctrl.approveAppointment);
 
 module.exports = router;

@@ -18,6 +18,21 @@ const fileToDataUrl = (file) =>
     reader.readAsDataURL(file);
   });
 
+const getAppointmentStatusLabel = (status) => {
+  switch (status) {
+    case "booked":
+      return "Pending approval";
+    case "approved":
+      return "Approved";
+    case "completed":
+      return "Completed";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status || "Pending approval";
+  }
+};
+
 const DoctorPage = ({ showToast }) => {
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -27,6 +42,7 @@ const DoctorPage = ({ showToast }) => {
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [patientModal, setPatientModal] = useState(null);
   const [editForm, setEditForm] = useState({
     specialization: "",
     department: "",
@@ -108,6 +124,25 @@ const DoctorPage = ({ showToast }) => {
       await appointmentAPI.complete(appointmentId);
       showToast("Appointment marked completed", "success");
       refreshAppointments();
+    } catch (error) {
+      showToast(getErrorMessage(error), "error");
+    }
+  };
+
+  const openPatientModal = (appointment) => {
+    if (!appointment || !appointment.patient_user_id) return;
+    const patient = patients.find((p) => Number(p.id) === Number(appointment.patient_user_id));
+    setPatientModal({ appointmentId: appointment.id, patient: patient || { name: appointment.patient_name } });
+  };
+
+  const closePatientModal = () => setPatientModal(null);
+
+  const handleApproveAppointment = async (appointmentId) => {
+    try {
+      await appointmentAPI.approve(appointmentId);
+      showToast("Appointment approved", "success");
+      refreshAppointments();
+      closePatientModal();
     } catch (error) {
       showToast(getErrorMessage(error), "error");
     }
@@ -261,6 +296,7 @@ const DoctorPage = ({ showToast }) => {
                       </div>
                     </div>
                   </div>
+                  {/* patient modal moved to top-level so it can be used from any tab */}
 
                   <div className={styles["profile-details"]}>
                     <div className={styles["detail-group"]}>
@@ -442,7 +478,7 @@ const DoctorPage = ({ showToast }) => {
                           <div className={styles["appointment-time"]}>{appointment.appointment_time || "N/A"}</div>
                         </div>
                         <span className={cx("status-badge", `status-${appointment.status || "booked"}`)}>
-                          {appointment.status || "booked"}
+                          {getAppointmentStatusLabel(appointment.status)}
                         </span>
                       </div>
 
@@ -459,8 +495,22 @@ const DoctorPage = ({ showToast }) => {
                         >
                           Chat
                         </button>
+
+                        <button
+                          className={styles["btn-secondary"]}
+                          type="button"
+                          onClick={() => openPatientModal(appointment)}
+                          disabled={!appointment.patient_user_id}
+                        >
+                          View Patient
+                        </button>
+
                         {appointment.status === "booked" ? (
-                          <button className={styles["btn-complete"]} onClick={() => handleCompleteAppointment(appointment.id)}>
+                          <button className={styles["btn-primary"]} type="button" onClick={() => handleApproveAppointment(appointment.id)}>
+                            Approve
+                          </button>
+                        ) : appointment.status === "approved" ? (
+                          <button className={styles["btn-complete"]} type="button" onClick={() => handleCompleteAppointment(appointment.id)}>
                             Mark Completed
                           </button>
                         ) : null}
@@ -475,6 +525,35 @@ const DoctorPage = ({ showToast }) => {
           )}
         </div>
       </div>
+      {patientModal && (
+        (() => {
+          const appointment = appointments.find((a) => Number(a.id) === Number(patientModal.appointmentId));
+          const p = patientModal.patient || {};
+          return (
+            <div className={styles["modal-overlay"]} onClick={closePatientModal}>
+              <div className={styles["modal-content"]} onClick={(e) => e.stopPropagation()}>
+                <h3>Patient Profile</h3>
+                <div className={styles["profile-details"]}>
+                  <div className={styles["detail-group"]}><label>Name:</label><p>{p.name || "N/A"}</p></div>
+                  <div className={styles["detail-group"]}><label>Email:</label><p>{p.email || "N/A"}</p></div>
+                  <div className={styles["detail-group"]}><label>Phone:</label><p>{p.phone || "N/A"}</p></div>
+                  <div className={styles["detail-group"]}><label>Age:</label><p>{p.age || "N/A"}</p></div>
+                  <div className={styles["detail-group"]}><label>Gender:</label><p>{p.gender || "N/A"}</p></div>
+                  <div className={styles["detail-group"]}><label>Medical History:</label><p>{p.medical_history || "N/A"}</p></div>
+                  <div className={styles["detail-group"]}><label>Address:</label><p>{p.address || "N/A"}</p></div>
+                </div>
+
+                <div className={styles["button-group"]}>
+                  <button className={styles["btn-secondary"]} type="button" onClick={closePatientModal}>Close</button>
+                  {appointment && appointment.status === "booked" ? (
+                    <button className={styles["btn-primary"]} type="button" onClick={() => handleApproveAppointment(appointment.id)}>Approve</button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          );
+        })()
+      )}
     </div>
   );
 };

@@ -27,7 +27,7 @@ exports.getMyPatientProfile = (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json(err);
       if (!rows.length) return res.status(404).json({ message: "Patient profile not found" });
-
+  
       return res.json({
         ...rows[0],
         profile_complete: hasValue(rows[0].age) && hasValue(rows[0].gender),

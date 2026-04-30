@@ -88,6 +88,12 @@
             });
         });
 
+    const ensureAppointmentStatusEnum = async () => {
+        await query(
+            "ALTER TABLE appointments MODIFY status ENUM('booked', 'approved', 'completed', 'cancelled') NOT NULL DEFAULT 'booked'"
+        );
+    };
+
     const hasValue = (value) => value !== null && value !== undefined && String(value).trim() !== "";
 
     const buildRoomKey = (doctorUserId, patientUserId) => `chat:${doctorUserId}:${patientUserId}`;
@@ -238,6 +244,16 @@
         });
     });
 
-    server.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
+    const startServer = async () => {
+        try {
+            await ensureAppointmentStatusEnum();
+        } catch (error) {
+            console.error("Failed to ensure appointment status enum", error.message || error);
+        }
+
+        server.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    };
+
+    startServer();
