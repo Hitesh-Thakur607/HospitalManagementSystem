@@ -11,7 +11,7 @@ exports.getMyAppointments = (req, res) => {
 
     if (role === "doctor") {
       return db.query(
-        `SELECT a.*, u.name AS patient_name
+        `SELECT a.*, u.name AS patient_name, p.user_id AS patient_user_id, d.user_id AS doctor_user_id
          FROM appointments a
          INNER JOIN patients p ON a.patient_id = p.id
          INNER JOIN users u ON p.user_id = u.id
@@ -21,14 +21,20 @@ exports.getMyAppointments = (req, res) => {
         [userId],
         (err, data) => {
           if (err) return res.status(500).json(err);
-          return res.json(data);
+          return res.json(
+            data.map((appointment) => ({
+              ...appointment,
+              patient_user_id: appointment.patient_user_id,
+              doctor_user_id: userId,
+            }))
+          );
         }
       );
     }
 
     if (role === "patient") {
       return db.query(
-        `SELECT a.*, u.name AS doctor_name, d.department
+        `SELECT a.*, u.name AS doctor_name, d.department, d.user_id AS doctor_user_id, p.user_id AS patient_user_id
          FROM appointments a
          INNER JOIN doctor d ON a.doctor_id = d.id
          INNER JOIN users u ON d.user_id = u.id
@@ -38,7 +44,12 @@ exports.getMyAppointments = (req, res) => {
         [userId],
         (err, data) => {
           if (err) return res.status(500).json(err);
-          return res.json(data);
+          return res.json(
+            data.map((appointment) => ({
+              ...appointment,
+              doctor_user_id: appointment.doctor_user_id,
+            }))
+          );
         }
       );
     }
@@ -69,7 +80,12 @@ exports.bookAppointment = (req, res) => {
       `SELECT d.id
        FROM doctor d
        INNER JOIN users u ON d.user_id = u.id
-       WHERE d.id = ? AND u.is_approved = 1`,
+       INNER JOIN doctor profile ON profile.user_id = u.id
+       WHERE d.id = ? AND u.is_approved = 1
+         AND profile.department IS NOT NULL AND profile.department <> ''
+         AND profile.biography IS NOT NULL AND profile.biography <> ''
+         AND profile.qualifications IS NOT NULL AND profile.qualifications <> ''
+         AND profile.experience_years IS NOT NULL`,
       [doctor_id],
       (dErr, dRows) => {
         if (dErr) return res.status(500).json(dErr);

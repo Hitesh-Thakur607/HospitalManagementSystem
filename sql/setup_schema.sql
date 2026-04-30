@@ -64,6 +64,20 @@ CREATE TABLE appointments (
   UNIQUE KEY uq_doctor_date_time (doctor_id, appointment_date, appointment_time)
 );
 
+-- Chat messages table
+CREATE TABLE chat_messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  doctor_user_id INT NOT NULL,
+  patient_user_id INT NOT NULL,
+  sender_user_id INT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_chat_doctor_user FOREIGN KEY (doctor_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_patient_user FOREIGN KEY (patient_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_sender_user FOREIGN KEY (sender_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_chat_thread_created_at (doctor_user_id, patient_user_id, created_at)
+);
+
 -- Insert Admin User (password: admin123)
 INSERT INTO users (name, email, password, role, is_approved, phone, address) 
 VALUES ('System Admin', 'admin@hospital.com', '$2a$10$YIH.5cBQCaH1xPFsF5.rN.5vfPWcBEi0/fWqFfCBLW8KLLt2xWpXm', 'admin', 1, '+1111111111', 'Admin Office');

@@ -1,30 +1,26 @@
 const mysql = require("mysql2");
 
-const db = mysql.createPool({
-  uri: process.env.MYSQL_ADDON_URI,
+const dbConfig = {
+  host: process.env.DB_HOST || "127.0.0.1",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "hospital_db",
   port: Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
   queueLimit: Number(process.env.DB_QUEUE_LIMIT) || 50,
   connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT) || 10000,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
-  ...(process.env.DB_SSL === "true"
-    ? {
-        ssl: {
-          rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === "true",
-        },
-      }
-    : {}),
-});
+};
+
+const db = mysql.createPool(dbConfig);
 
 db.getConnection((err, connection) => {
   if (err) {
-    console.error("MySQL pool init error:", err.message);
+    console.error(`MySQL pool init error (${dbConfig.host}:${dbConfig.port}):`, err.message);
     return;
   }
 
-  console.log("MySQL Pool Connected");
+  console.log("MySQL pool connected");
   connection.release();
 });
 

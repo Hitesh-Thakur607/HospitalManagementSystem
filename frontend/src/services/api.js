@@ -1,11 +1,13 @@
 import axios from "axios";
 
-const API_BASE = (process.env.REACT_APP_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+const rawApiBase = process.env.REACT_APP_API_URL?.trim();
+const API_BASE = (rawApiBase && rawApiBase !== "/" ? rawApiBase : "/api").replace(/\/+$/, "");
 
 export const apiCall = async (endpoint, options = {}) => {
+  const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   try {
     const response = await axios({
-      url: `${API_BASE}${endpoint}`,
+      url: `${API_BASE}${normalizedEndpoint}`,
       ...options,
       withCredentials: true,
     });
@@ -31,8 +33,19 @@ export const doctorAPI = {
   reject: (doctorId, reason) => apiCall(`/doctors/admin/reject/${doctorId}`, { method: "PUT", data: { reason } }),
 };
 
+export const patientAPI = {
+  getAll: () => apiCall("/patients"),
+  getMe: () => apiCall("/patients/me"),
+  updateMe: (payload) => apiCall("/patients/me", { method: "PUT", data: payload }),
+};
+
 export const appointmentAPI = {
   getAll: () => apiCall("/appointments/mine"),
   book: (payload) => apiCall("/appointments", { method: "POST", data: payload }),
   complete: (appointmentId) => apiCall(`/appointments/${appointmentId}/complete`, { method: "PUT" }),
+};
+
+export const chatAPI = {
+  getMessages: (peerUserId) => apiCall(`/chat/${peerUserId}/messages`),
+  sendMessage: (peerUserId, message) => apiCall(`/chat/${peerUserId}/messages`, { method: "POST", data: { message } }),
 };

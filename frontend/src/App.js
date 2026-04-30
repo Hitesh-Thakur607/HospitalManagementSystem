@@ -1,12 +1,26 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthContext, AuthProvider } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminPage from "./pages/AdminPage";
 import DoctorPage from "./pages/DoctorPage";
 import PatientPage from "./pages/PatientPage";
 import Toast from "./components/Toast";
+
+const ProtectedRoute = ({ roles, children }) => {
+  const { user } = useContext(AuthContext);
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (roles && !roles.includes(user.role)) {
+    return <Navigate to={`/${user.role}`} replace />;
+  }
+
+  return children;
+};
 
 function App() {
   const [toast, setToast] = useState({ message: "", type: "info" });
@@ -22,9 +36,30 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage showToast={showToast} />} />
         <Route path="/register" element={<RegisterPage showToast={showToast} />} />
-        <Route path="/admin" element={<AdminPage showToast={showToast} />} />
-        <Route path="/doctor" element={<DoctorPage showToast={showToast} />} />
-        <Route path="/patient" element={<PatientPage showToast={showToast} />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminPage showToast={showToast} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doctor"
+          element={
+            <ProtectedRoute roles={["doctor"]}>
+              <DoctorPage showToast={showToast} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/patient"
+          element={
+            <ProtectedRoute roles={["patient"]}>
+              <PatientPage showToast={showToast} />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </AuthProvider>

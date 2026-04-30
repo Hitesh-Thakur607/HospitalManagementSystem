@@ -1,7 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ChatPanel from "../components/ChatPanel";
 import { AuthContext } from "../context/AuthContext";
-import { appointmentAPI, authAPI, doctorAPI } from "../services/api";
+import { appointmentAPI, authAPI, doctorAPI, patientAPI } from "../services/api";
 import { getErrorMessage } from "../utils/helpers";
 import styles from "./DashboardPages.module.css";
 
@@ -20,10 +21,12 @@ const fileToDataUrl = (file) =>
 const DoctorPage = ({ showToast }) => {
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [patients, setPatients] = useState([]);
   const [activeTab, setActiveTab] = useState("profile");
   const [isSaving, setIsSaving] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [editForm, setEditForm] = useState({
     specialization: "",
     department: "",
@@ -35,29 +38,61 @@ const DoctorPage = ({ showToast }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const isProfileComplete =
+    Boolean(profile?.department) &&
+    Boolean(profile?.biography) &&
+    Boolean(profile?.qualifications) &&
+    profile?.experience_years !== null &&
+    profile?.experience_years !== undefined &&
+    profile?.experience_years !== "";
+
+  const readyPatients = patients.filter((patient) => {
+    return Boolean(patient.age) && Boolean(patient.gender);
+  });
+
   const formatDate = (value) => {
     if (!value) return "N/A";
     return new Date(value).toLocaleDateString();
   };
 
   useEffect(() => {
-    doctorAPI
-      .getMe()
-      .then((data) => {
-        setProfile(data);
-        setImagePreview(data.image || "");
+    let active = true;
+
+    const loadData = async () => {
+      try {
+        const [doctorProfile, doctorAppointments, patientList] = await Promise.all([doctorAPI.getMe(), appointmentAPI.getAll(), patientAPI.getAll()]);
+
+        if (!active) return;
+
+        setProfile(doctorProfile);
+        setImagePreview(doctorProfile.image || "");
         setEditForm({
-          specialization: data.specialization || "",
-          department: data.department || "",
-          qualifications: data.qualifications || "",
-          experience_years: data.experience_years || "",
-          biography: data.biography || "",
-          image: data.image || "",
+          specialization: doctorProfile.specialization || "",
+          department: doctorProfile.department || "",
+          qualifications: doctorProfile.qualifications || "",
+          experience_years: doctorProfile.experience_years || "",
+          biography: doctorProfile.biography || "",
+          image: doctorProfile.image || "",
         });
-      })
-      .catch((e) => showToast(getErrorMessage(e), "error"));
-    appointmentAPI.getAll().then(setAppointments).catch(() => {});
-  }, []);
+        setAppointments(Array.isArray(doctorAppointments) ? doctorAppointments : []);
+        setPatients(Array.isArray(patientList) ? patientList : []);
+      } catch (error) {
+        showToast(getErrorMessage(error), "error");
+      }
+    };
+
+    loadData();
+
+    return () => {
+      active = false;
+    };
+  }, [showToast]);
+
+  useEffect(() => {
+    if (profile && !isProfileComplete) {
+      setActiveTab("edit");
+    }
+  }, [profile, isProfileComplete]);
 
   const refreshAppointments = async () => {
     try {
@@ -163,6 +198,13 @@ const DoctorPage = ({ showToast }) => {
     navigate("/login");
   };
 
+  const openPatientChat = (patientId, patientName) => {
+    if (!patientId) return;
+
+    setSelectedPatient({ id: patientId, name: patientName || "Patient" });
+    setActiveTab("chat");
+  };
+
   return (
     <div className={styles["dashboard-page"]}>
       <header className={styles.header}>
@@ -176,10 +218,27 @@ const DoctorPage = ({ showToast }) => {
       </header>
       <div className={styles.container}>
         <div className={styles["page-content"]}>
+          {!isProfileComplete ? (
+            <div className={styles["profile-banner"]}>
+              <div>
+                <strong>Complete your doctor profile to unlock appointments and chat.</strong>
+                <p>Fill department, qualifications, biography, and experience. Approved doctors only can chat.</p>
+              </div>
+              <button className={styles["btn-primary"]} type="button" onClick={() => setActiveTab("edit")}>
+                Finish Profile
+              </button>
+            </div>
+          ) : null}
+
           <div className={styles.tabs}>
             <button className={cx("tab-btn", activeTab === "profile" ? "active" : "")} onClick={() => setActiveTab("profile")}>View Profile</button>
             <button className={cx("tab-btn", activeTab === "edit" ? "active" : "")} onClick={() => setActiveTab("edit")}>Edit Profile</button>
-            <button className={cx("tab-btn", activeTab === "appointments" ? "active" : "")} onClick={() => setActiveTab("appointments")}>Appointments ({appointments.length})</button>
+            <button className={cx("tab-btn", activeTab === "appointments" ? "active" : "")} onClick={() => setActiveTab("appointments")} disabled={!isProfileComplete} title={!isProfileComplete ? "Complete your profile first" : ""}>
+              Appointments ({appointments.length})
+            </button>
+            <button className={cx("tab-btn", activeTab === "chat" ? "active" : "")} onClick={() => setActiveTab("chat")} disabled={!isProfileComplete} title={!isProfileComplete ? "Complete your profile first" : ""}>
+              Chat
+            </button>
           </div>
 
           {activeTab === "profile" ? (
@@ -233,6 +292,50 @@ const DoctorPage = ({ showToast }) => {
               ) : (
                 <div className={styles["no-data"]}>Profile not found</div>
               )}
+            </>
+          ) : activeTab === "chat" ? (
+            <>
+              <h3 className={styles["section-title"]}>Patient Chat</h3>
+              <div className={styles["chat-layout"]}>
+                <aside className={styles["chat-sidebar"]}>
+                  <div className={styles["chat-sidebar-header"]}>
+                    <h4>Available patients</h4>
+                    <p>Select a patient to start chatting.</p>
+                  </div>
+
+                  {readyPatients.length ? (
+                    <div className={styles["chat-contact-list"]}>
+                      {readyPatients.map((patient) => (
+                        <button
+                          key={patient.id}
+                          type="button"
+                          className={cx("chat-contact-item", selectedPatient?.id === patient.id ? "active" : "")}
+                          onClick={() => setSelectedPatient({ id: patient.id, name: patient.name || "Patient" })}
+                        >
+                          <span>
+                            <strong>{patient.name || "Patient"}</strong>
+                            <small>{patient.gender || "Profile"}</small>
+                          </span>
+                          <span className={styles["chat-contact-arrow"]}>Open</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles["no-data"]}>No patients available yet</div>
+                  )}
+                </aside>
+
+                <div className={styles["chat-main"]}>
+                  <ChatPanel
+                    currentUser={user}
+                    peerUserId={selectedPatient?.id}
+                    peerName={selectedPatient?.name}
+                    peerRole="patient"
+                    peerStatus="approved"
+                    showToast={showToast}
+                  />
+                </div>
+              </div>
             </>
           ) : activeTab === "edit" ? (
             <>
@@ -348,6 +451,14 @@ const DoctorPage = ({ showToast }) => {
                       </div>
 
                       <div className={styles["appointment-actions"]}>
+                        <button
+                          className={styles["btn-secondary"]}
+                          type="button"
+                          onClick={() => openPatientChat(appointment.patient_user_id, appointment.patient_name)}
+                          disabled={!appointment.patient_user_id}
+                        >
+                          Chat
+                        </button>
                         {appointment.status === "booked" ? (
                           <button className={styles["btn-complete"]} onClick={() => handleCompleteAppointment(appointment.id)}>
                             Mark Completed
